@@ -1,0 +1,357 @@
+<div class="scoreboard-container">
+
+  <!-- Top Quick Control Bar -->
+  <header class="top-controls">
+    <div class="period-selector-wrapper">
+      <span class="control-label">Período:</span>
+      <div class="period-pills">
+        @for (p of periods; track p) {
+          <button 
+            type="button"
+            class="pill-btn" 
+            [class.active]="period() === p"
+            (click)="onSetPeriod(p)"
+            [attr.aria-label]="'Definir período para ' + p">
+            {{ p }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <!-- Swap sides button -->
+      <button 
+        type="button" 
+        class="action-btn secondary swap-btn" 
+        (click)="onSwapTeams()" 
+        title="Trocar Equipas de Campo">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/>
+        </svg>
+        <span>Trocar Lados</span>
+      </button>
+
+      <!-- Sound Toggle -->
+      <button 
+        type="button" 
+        class="action-btn icon-only" 
+        [class.active]="soundEnabled()"
+        (click)="toggleSound()" 
+        [title]="soundEnabled() ? 'Silenciar Áudio' : 'Ativar Áudio'">
+        @if (soundEnabled()) {
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        } @else {
+          <svg class="btn-icon text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        }
+      </button>
+
+      <!-- Keyboard Shortcuts Help -->
+      <button 
+        type="button" 
+        class="action-btn icon-only" 
+        (click)="toggleShortcutsModal()" 
+        title="Atalhos de Teclado">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"></path>
+        </svg>
+      </button>
+
+      <!-- Reset Match Button -->
+      <button 
+        type="button" 
+        class="action-btn danger reset-match-btn" 
+        (click)="promptResetMatch()" 
+        title="Reiniciar jogo completo (resultado e cronómetro)">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        <span>Reiniciar Jogo</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stadium Scoreboard Main Grid -->
+  <main class="scoreboard-arena">
+
+    <!-- HOME TEAM SECTION (Equipa A) -->
+    <section class="team-card home-team">
+      <div class="team-header">
+        <span class="team-badge home-badge">CASA</span>
+        
+        <!-- Editable Team Name -->
+        <div class="team-name-wrapper">
+          @if (isEditingHome()) {
+            <div class="edit-input-group">
+              <input 
+                #homeInput
+                type="text" 
+                class="team-name-input" 
+                [ngModel]="tempHomeName()"
+                (ngModelChange)="tempHomeName.set($event)"
+                (keydown.enter)="saveEditHome()"
+                (keydown.escape)="cancelEditHome()"
+                (blur)="saveEditHome()"
+                maxlength="24"
+                placeholder="Nome da Equipa A" />
+              <button type="button" class="btn-confirm-edit" (click)="saveEditHome()" title="Confirmar">✓</button>
+            </div>
+          } @else {
+            <button 
+              type="button" 
+              class="team-name-display" 
+              (click)="startEditHome()"
+              title="Clique para editar o nome da equipa">
+              <span class="team-name-text">{{ homeTeam() }}</span>
+              <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Large Score Display -->
+      <div class="score-display-container">
+        <div 
+          class="score-number home-score-number"
+          (click)="onIncrementHome()"
+          title="Clique para adicionar +1 golo">
+          {{ homeScore() }}
+        </div>
+      </div>
+
+      <!-- Increment / Decrement Buttons -->
+      <div class="score-controls">
+        <button 
+          type="button" 
+          class="score-btn decrement-btn home-dec" 
+          (click)="onDecrementHome()"
+          [disabled]="homeScore() <= 0"
+          title="Subtrair 1 golo"
+          aria-label="Subtrair 1 golo da Equipa da Casa">
+          <span class="symbol">−1</span>
+        </button>
+        <button 
+          type="button" 
+          class="score-btn increment-btn home-inc" 
+          (click)="onIncrementHome()"
+          title="Adicionar 1 golo"
+          aria-label="Adicionar 1 golo à Equipa da Casa">
+          <span class="symbol">+1</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- CENTER TIMER SECTION -->
+    <section class="timer-section">
+      <div class="timer-card">
+        <div class="timer-header">
+          <div class="timer-status-indicator" [class.running]="isRunning()">
+            <span class="status-dot"></span>
+            <span class="status-label">{{ isRunning() ? 'EM JOGO' : 'PAUSADO' }}</span>
+          </div>
+          <span class="period-display-tag">{{ period() }}</span>
+        </div>
+
+        <!-- Central Digital Timer Display MM:SS -->
+        <div class="digital-timer-display" [class.active-glow]="isRunning()">
+          {{ formattedTime() }}
+        </div>
+
+        <!-- Main Timer Controls -->
+        <div class="timer-primary-controls">
+          <button 
+            type="button" 
+            class="timer-btn main-timer-btn" 
+            [class.running]="isRunning()"
+            (click)="onToggleTimer()">
+            @if (isRunning()) {
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1"/>
+                <rect x="14" y="4" width="4" height="16" rx="1"/>
+              </svg>
+              <span>PAUSA</span>
+            } @else {
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>INICIAR</span>
+            }
+          </button>
+
+          <button 
+            type="button" 
+            class="timer-btn secondary-timer-btn" 
+            (click)="onResetTimer()"
+            title="Repor cronómetro a 00:00">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"></path>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span>REPOR</span>
+          </button>
+        </div>
+
+        <!-- Quick Adjustment Buttons (+1m / -1m) -->
+        <div class="timer-quick-adjustments">
+          <button type="button" class="adj-btn" (click)="onAdjustTime(-60)" title="Subtrair 1 minuto">-1 min</button>
+          <button type="button" class="adj-btn" (click)="onAdjustTime(60)" title="Adicionar 1 minuto">+1 min</button>
+          <button type="button" class="adj-btn" (click)="onAdjustTime(300)" title="Adicionar 5 minutos">+5 min</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- AWAY TEAM SECTION (Equipa B) -->
+    <section class="team-card away-team">
+      <div class="team-header">
+        <span class="team-badge away-badge">FORA</span>
+        
+        <!-- Editable Team Name -->
+        <div class="team-name-wrapper">
+          @if (isEditingAway()) {
+            <div class="edit-input-group">
+              <input 
+                #awayInput
+                type="text" 
+                class="team-name-input" 
+                [ngModel]="tempAwayName()"
+                (ngModelChange)="tempAwayName.set($event)"
+                (keydown.enter)="saveEditAway()"
+                (keydown.escape)="cancelEditAway()"
+                (blur)="saveEditAway()"
+                maxlength="24"
+                placeholder="Nome da Equipa B" />
+              <button type="button" class="btn-confirm-edit" (click)="saveEditAway()" title="Confirmar">✓</button>
+            </div>
+          } @else {
+            <button 
+              type="button" 
+              class="team-name-display" 
+              (click)="startEditAway()"
+              title="Clique para editar o nome da equipa">
+              <span class="team-name-text">{{ awayTeam() }}</span>
+              <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Large Score Display -->
+      <div class="score-display-container">
+        <div 
+          class="score-number away-score-number"
+          (click)="onIncrementAway()"
+          title="Clique para adicionar +1 golo">
+          {{ awayScore() }}
+        </div>
+      </div>
+
+      <!-- Increment / Decrement Buttons -->
+      <div class="score-controls">
+        <button 
+          type="button" 
+          class="score-btn decrement-btn away-dec" 
+          (click)="onDecrementAway()"
+          [disabled]="awayScore() <= 0"
+          title="Subtrair 1 golo"
+          aria-label="Subtrair 1 golo da Equipa de Fora">
+          <span class="symbol">−1</span>
+        </button>
+        <button 
+          type="button" 
+          class="score-btn increment-btn away-inc" 
+          (click)="onIncrementAway()"
+          title="Adicionar 1 golo"
+          aria-label="Adicionar 1 golo à Equipa de Fora">
+          <span class="symbol">+1</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Match Events Timeline Bar (omarcador inspired live log) -->
+  @if (events().length > 0) {
+    <footer class="events-history-panel">
+      <div class="events-header">
+        <div class="events-title">
+          <svg class="small-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Histórico de Eventos</span>
+        </div>
+        <button type="button" class="btn-text-action" (click)="scoreboardService.clearEvents()">Limpar Histórico</button>
+      </div>
+      <div class="events-list">
+        @for (ev of events(); track ev.id) {
+          <div class="event-item" [class]="ev.type">
+            <span class="event-time">{{ ev.timeFormatted }}</span>
+            <span class="event-desc">{{ ev.description }}</span>
+          </div>
+        }
+      </div>
+    </footer>
+  }
+
+  <!-- Confirm Reset Match Modal Dialog -->
+  @if (showResetConfirm()) {
+    <div class="modal-backdrop" (click)="cancelResetMatch()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h3 class="modal-title">Reiniciar Marcador Completo?</h3>
+        <p class="modal-text">Esta ação irá colocar ambos os resultados a 0 e repor o cronómetro da partida a 00:00.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="cancelResetMatch()">Cancelar</button>
+          <button type="button" class="btn-confirm-danger" (click)="confirmResetMatch()">Sim, Reiniciar Jogo</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Keyboard Shortcuts Modal -->
+  @if (showShortcutsModal()) {
+    <div class="modal-backdrop" (click)="toggleShortcutsModal()">
+      <div class="modal-content shortcuts-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Atalhos de Teclado</h3>
+          <button type="button" class="btn-close" (click)="toggleShortcutsModal()">✕</button>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="shortcut-row">
+            <kbd>Barra de Espaço</kbd>
+            <span>Iniciar / Pausar Cronómetro</span>
+          </div>
+          <div class="shortcut-row">
+            <kbd>Q</kbd> / <kbd>A</kbd>
+            <span>Equipa Casa (+1 / −1 Golo)</span>
+          </div>
+          <div class="shortcut-row">
+            <kbd>P</kbd> / <kbd>L</kbd>
+            <span>Equipa Fora (+1 / −1 Golo)</span>
+          </div>
+          <div class="shortcut-row">
+            <kbd>R</kbd>
+            <span>Repor Cronómetro a 00:00</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-primary" (click)="toggleShortcutsModal()">Entendido</button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
